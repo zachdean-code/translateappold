@@ -13,9 +13,9 @@ def home():
     return jsonify({"status": "API running"})
 
 
-@app.route("/translate", methods=["POST", "OPTIONS"])
+@app.route("/translate", methods=["POST"])
 def translate():
-    data = request.get_json()
+    data = request.get_json(silent=True) or {}
     input_text = data.get("text", "")
 
     headers = {
@@ -28,7 +28,7 @@ def translate():
         "messages": [
             {
                 "role": "system",
-                "content": "You are a professional translator. Translate the user's text accurately into the requested target language."
+                "content": "You are a professional translator. Translate the user's text accurately into natural English."
             },
             {
                 "role": "user",
