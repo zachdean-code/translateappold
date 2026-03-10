@@ -1,98 +1,46 @@
 from flask import Flask, request, jsonify
-from flask_cors import CORS
-import requests
 import os
-import json
+from openai import OpenAI
 
 app = Flask(__name__)
-CORS(app)
 
-OPENAI_API_KEY = os.getenv("OPENAI_API_KEY")
-
-
-@app.route("/", methods=["GET"])
-def home():
-    return jsonify({"status":"API running"})
-
+client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
 
 @app.route("/translate", methods=["POST"])
 def translate():
 
-    data=request.get_json(silent=True) or {}
+    data = request.get_json()
 
-    input_text=data.get("text","").strip()
+    text = data.get("text", "")
 
-    target_language=data.get("targetLanguage","American English")
+    target = data.get("target", "")
 
-    if not input_text:
-        return jsonify({"output":"","pronunciation":""})
+    if not text:
+        return jsonify({"error":"No text provided"}),400
 
-    headers={
-        "Authorization":f"Bearer {OPENAI_API_KEY}",
-        "Content-Type":"application/json"
-    }
-
-    payload={
-
-        "model":"gpt-4o-mini",
-
-        "messages":[
-
-            {
-                "role":"system",
-
-                "content":(
-                    "You are a translation engine. "
-                    "Translate the user's text into the requested target language or dialect. "
-                    "Then generate a pronunciation guide for the translated sentence. "
-                    "The pronunciation should help a speaker of the SOURCE language say the TRANSLATED sentence. "
-                    "Use simple phonetic spelling. Do not use IPA. "
-                    "Return only JSON in this format: "
-                    '{"translation":"...","pronunciation":"..."}'
-                )
-            },
-
-            {
-                "role":"user",
-                "content":f"Target language: {target_language}\n\nText:\n{input_text}"
-            }
-
-        ]
-
-    }
-
-    response=requests.post(
-        "https://api.openai.com/v1/chat/completions",
-        headers=headers,
-        json=payload
-    )
-
-    if response.status_code!=200:
-        return jsonify({"output":response.text,"pronunciation":""})
-
-    result=response.json()
-
-    content=result["choices"][0]["message"]["content"]
 
     try:
 
-        parsed=json.loads(content)
+        response = client.chat.completions.create(
+            model="gpt-4o-mini",
+            messages=[
+                {"role":"system","content":"You are a professional translator."},
+                {"role":"user","content":f"Translate this text to {target}: {text}"}
+            ]
+        )
 
-        translation=parsed.get("translation","")
+        translated = response.choices[0].message.content
 
-        pronunciation=parsed.get("pronunciation","")
+        return jsonify({
+            "translation": translated
+        })
 
-    except:
+    except Exception as e:
 
-        translation=content
-
-        pronunciation=""
-
-    return jsonify({
-        "output":translation,
-        "pronunciation":pronunciation
-    })
+        return jsonify({
+            "error": str(e)
+        }),500
 
 
-if __name__=="__main__":
-    app.run(host="0.0.0.0",port=5000)
+if __name__ == "__main__":
+    app.run(host="0.0.0.0", port=5000)
