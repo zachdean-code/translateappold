@@ -1,18 +1,39 @@
 from flask import Flask, request, jsonify
+from openai import OpenAI
 import os
 
 app = Flask(__name__)
 
-OPENAI_API_KEY = os.getenv("OPENAI_API_KEY")
+client = OpenAI(api_key=os.environ.get("OPENAI_API_KEY"))
 
-@app.route('/translate', methods=['POST'])
+@app.route("/translate", methods=["POST"])
 def translate():
-    data = request.get_json()
-    input_text = data.get('text', '')
+    data = request.get_json() or {}
 
-    translated_text = "Translated text from OpenAI"
+    input_text = data.get("text", "").strip()
+    target = data.get("target", "English").strip()
 
-    return jsonify({"output": translated_text})
+    if not input_text:
+        return jsonify({"error": "No text provided"}), 400
 
-if __name__ == '__main__':
-    app.run(host='0.0.0.0', port=5000)
+    try:
+        prompt = f"Translate to {target}: {input_text}"
+
+        response = client.chat.completions.create(
+            model="gpt-4o-mini",
+            messages=[
+                {"role": "system", "content": "You are a professional translator."},
+                {"role": "user", "content": prompt}
+            ]
+        )
+
+        translated_text = response.choices[0].message.content.strip()
+
+        return jsonify({"output": translated_text})
+
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+
+if __name__ == "__main__":
+    app.run(host="0.0.0.0", port=5000)
