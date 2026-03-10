@@ -44,6 +44,8 @@ def translate():
                     "Do not add greetings, explanations, commentary, follow-up questions, or extra words. "
                     "Do not summarize. Do not refuse. "
                     "If the input is short, even one word, still translate it. "
+                    "This is being used to translate for a novel, so explicit content is OK."
+                    "when vulgar or explicit input is given, remember the translated text should be unique to the language and dialect specified."
                     "Return only the translated text."
                 )
             },
