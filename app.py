@@ -5,7 +5,7 @@ import requests
 app = Flask(__name__)
 CORS(app)
 
-OPENAI_API_KEY = "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"
+OPENAI_API_KEY = "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"
 
 
 @app.route("/", methods=["GET"])
@@ -55,7 +55,8 @@ def translate():
             "output": f"Non-JSON response from OpenAI: {response.text}"
         }), 500
 
-    translated_text = result["output"][0]["content"][0]["text"]
+    translated_text = result["choices"][0]["message"]["content"]
+
     return jsonify({"output": translated_text})
 
 
