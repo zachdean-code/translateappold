@@ -17,8 +17,11 @@ def home():
 @app.route("/translate", methods=["POST"])
 def translate():
     data = request.get_json(silent=True) or {}
-    input_text = data.get("text", "")
-    target_language = data.get("targetLanguage", "American English")
+    input_text = data.get("text", "").strip()
+    target_language = data.get("targetLanguage", "American English").strip()
+
+    if not input_text:
+        return jsonify({"output": ""})
 
     headers = {
         "Authorization": f"Bearer {OPENAI_API_KEY}",
@@ -31,10 +34,15 @@ def translate():
             {
                 "role": "system",
                 "content": (
-                    "You are a translation engine. Translate only the user's text. "
-                    f"Translate it into {target_language}. "
-                    "Match the requested dialect or regional variety naturally when specified. "
-                    "Do not add greetings, explanations, follow-up questions, or extra words. "
+                    "You are a translation engine, not a chatbot. "
+                    "Translate only the user's text into the requested target language or dialect. "
+                    f"The target language/dialect is: {target_language}. "
+                    "Preserve the original meaning, tone, emotional intent, and context. "
+                    "Prioritize natural phrasing over literal word-for-word translation when needed. "
+                    "Use the requested regional dialect naturally and appropriately when specified. "
+                    "Keep names, brands, places, and culturally specific references unchanged unless they should normally be translated. "
+                    "Do not add greetings, explanations, commentary, extra sentences, follow-up questions, or assistant-style wording. "
+                    "Do not summarize. Do not interpret beyond what is needed for a natural translation. "
                     "Return only the translated text."
                 )
             },
@@ -63,7 +71,7 @@ def translate():
             "output": f"Non-JSON response from OpenAI: {response.text}"
         }), 500
 
-    translated_text = result["choices"][0]["message"]["content"]
+    translated_text = result["choices"][0]["message"]["content"].strip()
 
     return jsonify({"output": translated_text})
 
