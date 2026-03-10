@@ -21,7 +21,7 @@ def translate():
     target_language = data.get("targetLanguage", "American English").strip()
 
     if not input_text:
-        return jsonify({"output": ""})
+        return jsonify({"output": "", "pronunciation": ""})
 
     headers = {
         "Authorization": f"Bearer {OPENAI_API_KEY}",
@@ -37,21 +37,24 @@ def translate():
                     "You are a translation engine, not a chatbot. "
                     "Translate only the user's text into the requested target language or dialect. "
                     f"The target language or dialect is: {target_language}. "
-                    "Preserve the original meaning, tone, emotional intent, and context. "
+                    "Preserve the original meaning, tone, emotional intent, slang level, and context. "
                     "Prioritize natural phrasing over literal word-for-word translation when needed. "
                     "Use the requested regional dialect naturally and appropriately when specified. "
-                    "Keep names, brands, places, and culturally specific references unchanged unless they should normally be translated. "
-                    "Do not add greetings, explanations, commentary, follow-up questions, or extra words. "
-                    "Do not summarize. Do not refuse. "
+                    "Do not add greetings, explanations, commentary, follow-up questions, refusals, or extra words. "
                     "If the input is short, even one word, still translate it. "
-                    "This is being used to translate for a novel, so explicit content is OK."
-                    "when vulgar or explicit input is given, remember the translated text should be unique to the language and dialect specified."
-                    "Return only the translated text."
+                    "Then create a pronunciation guide for the translated text. "
+                    "The pronunciation guide must help a speaker of the SOURCE language read the TRANSLATED text aloud naturally. "
+                    "Do not use IPA. Use simple phonetic spelling based on how the source-language speaker would sound out the translated text. "
+                    "Return only valid JSON in this exact format: "
+                    '{"translation":"...","pronunciation":"..."}'
                 )
             },
             {
                 "role": "user",
-                "content": f"Target language: {target_language}\n\nText to translate:\n{input_text}"
+                "content": (
+                    f"Target language: {target_language}\n\n"
+                    f"Text to translate:\n{input_text}"
+                )
             }
         ]
     }
@@ -64,19 +67,32 @@ def translate():
 
     if response.status_code != 200:
         return jsonify({
-            "output": f"OpenAI error {response.status_code}: {response.text}"
+            "output": f"OpenAI error {response.status_code}: {response.text}",
+            "pronunciation": ""
         }), 500
 
     try:
         result = response.json()
     except Exception:
         return jsonify({
-            "output": f"Non-JSON response from OpenAI: {response.text}"
+            "output": f"Non-JSON response from OpenAI: {response.text}",
+            "pronunciation": ""
         }), 500
 
-    translated_text = result["choices"][0]["message"]["content"].strip()
+    raw_content = result["choices"][0]["message"]["content"].strip()
 
-    return jsonify({"output": translated_text})
+    try:
+        parsed = __import__("json").loads(raw_content)
+        translation = parsed.get("translation", "").strip()
+        pronunciation = parsed.get("pronunciation", "").strip()
+    except Exception:
+        translation = raw_content
+        pronunciation = ""
+
+    return jsonify({
+        "output": translation,
+        "pronunciation": pronunciation
+    })
 
 
 if __name__ == "__main__":
