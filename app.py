@@ -1,29 +1,39 @@
-from flask import Flask,request,jsonify
+from flask import Flask, request, jsonify
 from openai import OpenAI
 import os
 
-app=Flask(__name__)
-client=OpenAI(api_key=os.environ.get("OPENAI_API_KEY"))
+app = Flask(__name__)
 
-@app.route("/translate",methods=["POST"])
+client = OpenAI(api_key=os.environ.get("OPENAI_API_KEY"))
+
+@app.route("/translate", methods=["POST"])
 def translate():
- data=request.get_json()
- text=data.get("text","")
- target=data.get("target","English")
+    data = request.get_json() or {}
 
- prompt=f"Translate to {target}: {text}"
+    text = data.get("text", "").strip()
+    target = data.get("target", "English").strip()
 
- res=client.chat.completions.create(
- model="gpt-4o-mini",
- messages=[
- {"role":"system","content":"You are a translator"},
- {"role":"user","content":prompt}
- ]
- )
+    if not text:
+        return jsonify({"error": "No text provided"}), 400
 
- translated=res.choices[0].message.content.strip()
+    try:
+        prompt = f"Translate to {target}: {text}"
 
- return jsonify({"output":translated})
+        res = client.chat.completions.create(
+            model="gpt-4o-mini",
+            messages=[
+                {"role": "system", "content": "You are a translator"},
+                {"role": "user", "content": prompt}
+            ]
+        )
 
-if __name__=="__main__":
- app.run(host="0.0.0.0",port=5000)
+        translated = res.choices[0].message.content.strip()
+
+        return jsonify({"output": translated})
+
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+
+if __name__ == "__main__":
+    app.run(host="0.0.0.0", port=5000)
