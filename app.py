@@ -5,7 +5,8 @@ import requests
 app = Flask(__name__)
 CORS(app)
 
-OPENAI_API_KEY = "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"
+import os
+OPENAI_API_KEY = os.getenv("OPENAI_API_KEY")
 
 
 @app.route("/", methods=["GET"])
