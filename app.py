@@ -5,7 +5,7 @@ import requests
 app = Flask(__name__)
 CORS(app)
 
-OPENAI_API_KEY = "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"
+OPENAI_API_KEY = "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"
 
 
 @app.route("/", methods=["GET"])
