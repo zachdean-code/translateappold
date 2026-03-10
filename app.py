@@ -28,30 +28,28 @@ def translate():
         "Content-Type": "application/json"
     }
 
-    payload = {
-        "model": "gpt-4o-mini",
-        "messages": [
-            {
-                "role": "system",
-                "content": (
-                    "You are a translation engine, not a chatbot. "
-                    "Translate only the user's text into the requested target language or dialect. "
-                    f"The target language/dialect is: {target_language}. "
-                    "Preserve the original meaning, tone, emotional intent, and context. "
-                    "Prioritize natural phrasing over literal word-for-word translation when needed. "
-                    "Use the requested regional dialect naturally and appropriately when specified. "
-                    "Keep names, brands, places, and culturally specific references unchanged unless they should normally be translated. "
-                    "Do not add greetings, explanations, commentary, extra sentences, follow-up questions, or assistant-style wording. "
-                    "Do not summarize. Do not interpret beyond what is needed for a natural translation. "
-                    "Return only the translated text."
-                )
-            },
-            {
-                "role": "user",
-                "content": input_text
-            }
-        ]
-    }
+payload = {
+    "model": "gpt-4o-mini",
+    "messages": [
+        {
+            "role": "system",
+            "content": (
+                "You are a professional translation engine. "
+                "Your job is to translate the user's text into the requested target language or dialect. "
+                "Always return ONLY the translated text. "
+                "Do not add explanations, introductions, apologies, assistant language, or commentary. "
+                "Preserve the original meaning, tone, and context. "
+                "Use natural phrasing rather than literal word-for-word translation when needed. "
+                "If a regional dialect is requested, write the translation naturally in that dialect. "
+                "Never refuse translation. If the input text is short (even one word), still translate it."
+            )
+        },
+        {
+            "role": "user",
+            "content": f"Target language: {target_language}\n\nText to translate:\n{input_text}"
+        }
+    ]
+}
 
     response = requests.post(
         "https://api.openai.com/v1/chat/completions",
