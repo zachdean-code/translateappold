@@ -55,8 +55,7 @@ def translate():
             "output": f"Non-JSON response from OpenAI: {response.text}"
         }), 500
 
-    translated_text = result["choices"][0]["message"]["content"]
-
+    translated_text = result["choices"][0]["message"]["content"]translated_text = result["output"][0]["content"][0]["text"]
     return jsonify({"output": translated_text})
 
 
