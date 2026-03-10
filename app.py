@@ -1,11 +1,11 @@
 from flask import Flask, request, jsonify
 from flask_cors import CORS
 import requests
+import os
 
 app = Flask(__name__)
 CORS(app)
 
-import os
 OPENAI_API_KEY = os.getenv("OPENAI_API_KEY")
 
 
@@ -18,6 +18,7 @@ def home():
 def translate():
     data = request.get_json(silent=True) or {}
     input_text = data.get("text", "")
+    target_language = data.get("targetLanguage", "American English")
 
     headers = {
         "Authorization": f"Bearer {OPENAI_API_KEY}",
@@ -29,7 +30,13 @@ def translate():
         "messages": [
             {
                 "role": "system",
-                "content": "You are a professional translator. Translate the user's text accurately into natural English."
+                "content": (
+                    "You are a translation engine. Translate only the user's text. "
+                    f"Translate it into {target_language}. "
+                    "Match the requested dialect or regional variety naturally when specified. "
+                    "Do not add greetings, explanations, follow-up questions, or extra words. "
+                    "Return only the translated text."
+                )
             },
             {
                 "role": "user",
