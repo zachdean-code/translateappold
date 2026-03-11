@@ -21,18 +21,53 @@ def translate():
     target = data.get("target", "English").strip()
 
     if not text:
+          if not text:
         return jsonify({"error": "No text provided"}), 400
 
-    try:
-        prompt = f"Translate to {target}: {text}"
+    res = client.chat.completions.create(
+        model="gpt-4o-mini",
+        messages=[
+            {
+                "role": "system",
+                "content": (
+                    "You are a precise translator. "
+                    "Return only the final translated text in the requested target language or dialect. "
+                    "Do not add introductions, labels, quotation marks, explanations, warnings, notes, or context. "
+                    "Do not say things like 'In American English, that would be' or include dialect names before the translation. "
+                    "Do not wrap the translation in quotation marks. "
+                    "Output only the translated wording the user should copy and paste."
+                )
+            },
+            {
+                "role": "user",
+                "content": f"Translate this into {target}: {text}"
+            }
+        ]
+    )
 
-        res = client.chat.completions.create(
-            model="gpt-4o-mini",
-            messages=[
-                {"role": "system", "content": "You are a translator"},
-                {"role": "user", "content": prompt}
-            ]
-        )
+    translated = res.choices[0].message.content.strip()
+
+    return jsonify({"output": translated})
+
+res = client.chat.completions.create(
+    model="gpt-4o-mini",
+    messages=[
+        {
+            "role": "system",
+            "content": (
+                "You are a precise translator. "
+                "Return only the final translated text in the requested target language or dialect. "
+                "Do not add introductions, labels, quotation marks, explanations, warnings, notes, or context. "
+                "Do not say things like 'In American English, that would be' or include dialect names before the translation. "
+                "Output only the translated wording the user should copy and paste."
+            )
+        },
+        {
+            "role": "user",
+            "content": f"Translate this into {target}: {text}"
+        }
+    ]
+)
 
         translated = res.choices[0].message.content.strip()
 
