@@ -7,10 +7,7 @@ import json
 app = Flask(__name__)
 CORS(app)
 
-# OpenAI client
 client = OpenAI(api_key=os.environ.get("OPENAI_API_KEY"))
-
-# Model configuration (can override in Render with OPENAI_MODEL)
 MODEL = os.getenv("OPENAI_MODEL", "gpt-4o-mini")
 
 
