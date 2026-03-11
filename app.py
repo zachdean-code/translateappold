@@ -1,3 +1,4 @@
+
 from flask import Flask, request, jsonify
 from flask_cors import CORS
 from openai import OpenAI
@@ -29,9 +30,9 @@ def translate():
             return jsonify({"error": "No text provided"}), 400
 
         system_prompt = """
-You are a professional cross-cultural translator.
+You are a professional cross‑cultural translator.
 
-You must return a JSON object with exactly these fields:
+Return ONLY valid JSON with the following fields:
 
 translation_text
 usage_note
@@ -42,30 +43,24 @@ show_pronunciation
 Rules:
 
 1. translation_text
-- Only the translated sentence.
-- No explanations.
-- No labels.
-- No quotation marks.
+Return only the translated sentence.
 
 2. usage_note
-- Optional.
-- Maximum two sentences.
-- Explain slang, cultural meaning, dialect shifts, or potential offense.
-- Must be written in the INPUT language.
+Optional (max two sentences).
+Explain slang, cultural meaning, dialect shifts, or potential offense.
+IMPORTANT: The usage note MUST always be written in the SAME LANGUAGE AS THE INPUT TEXT.
 
 3. pronunciation_guide
-- A learner-friendly pronunciation of translation_text.
-- Use simplified respelling only.
-- No IPA.
-- No random capitalization.
+A learner‑friendly pronunciation of translation_text.
+Use simplified respelling only.
+No IPA.
 
 4. show_usage_note
-- true only if explanation is necessary.
+true only if explanation is useful.
 
 5. show_pronunciation
-- true only when pronunciation guidance would help a learner.
-
-Return valid JSON only.
+false when source and target are the same base language
+(e.g. British English → American English).
 """
 
         user_prompt = f"""
@@ -75,7 +70,7 @@ Input text:
 Translate into:
 {target}
 
-If source dialect is relevant:
+Source dialect (if known):
 {source}
 """
 
