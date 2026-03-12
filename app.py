@@ -1,14 +1,12 @@
 from flask import Flask, request, jsonify
-from flask_cors import CORS
 from openai import OpenAI
+from flask_cors import CORS
 import os
-import json
 
 app = Flask(__name__)
 CORS(app)
 
 client = OpenAI(api_key=os.environ.get("OPENAI_API_KEY"))
-MODEL = os.getenv("OPENAI_MODEL", "gpt-4o-mini")
 
 
 @app.route("/", methods=["GET"])
@@ -22,86 +20,37 @@ def translate():
         data = request.get_json() or {}
 
         text = data.get("text", "").strip()
-        target = data.get("target", "").strip()
-        source = data.get("source", "").strip()
+        target = data.get("target", "English").strip()
 
         if not text:
             return jsonify({"error": "No text provided"}), 400
 
-        system_prompt = """
-You are a professional cross-cultural translator.
-
-Return ONLY valid JSON with exactly these fields:
-translation_text
-usage_note
-pronunciation_guide
-show_usage_note
-show_pronunciation
-
-Rules:
-
-1. translation_text
-Return only the translated sentence.
-No labels.
-No quotation marks.
-No explanation text.
-
-2. usage_note
-Optional. Maximum two sentences.
-Explain slang, cultural meaning, dialect shifts, or potential offense only when useful.
-IMPORTANT: The usage note MUST always be written in the SAME LANGUAGE AS THE INPUT TEXT.
-
-3. pronunciation_guide
-A learner-friendly pronunciation of translation_text.
-Use simplified respelling only.
-No IPA.
-IMPORTANT: Generate this when helpful, independent of whether the user has currently expanded the pronunciation section.
-
-4. show_usage_note
-true only if a note is actually useful.
-
-5. show_pronunciation
-false when source and target are the same base language
-(for example British English to American English).
-
-Return valid JSON only.
-"""
-
-        user_prompt = f"""
-Input text:
-{text}
-
-Translate into:
-{target}
-
-Source dialect (if known):
-{source}
-"""
+        prompt = f"Translate this into {target}: {text}"
 
         res = client.chat.completions.create(
-            model=MODEL,
+            model="gpt-4o-mini",
             messages=[
-                {"role": "system", "content": system_prompt},
-                {"role": "user", "content": user_prompt}
-            ],
-            temperature=0.2,
-            max_tokens=300
+                {
+                    "role": "system",
+                    "content": (
+                        "You are a precise translator. "
+                        "Return only the final translated text in the requested target language or dialect. "
+                        "Do not add introductions, labels, quotation marks, explanations, warnings, notes, or context. "
+                        "Do not say things like 'In American English, that would be' or include dialect names before the translation. "
+                        "Do not wrap the translation in quotation marks. "
+                        "Output only the exact translated wording the user should copy and paste."
+                    )
+                },
+                {
+                    "role": "user",
+                    "content": prompt
+                }
+            ]
         )
 
-        raw = res.choices[0].message.content.strip()
+        translated = res.choices[0].message.content.strip()
 
-        try:
-            structured = json.loads(raw)
-        except Exception:
-            structured = {
-                "translation_text": raw,
-                "usage_note": "",
-                "pronunciation_guide": "",
-                "show_usage_note": False,
-                "show_pronunciation": False
-            }
-
-        return jsonify(structured)
+        return jsonify({"output": translated})
 
     except Exception as e:
         return jsonify({"error": str(e)}), 500
