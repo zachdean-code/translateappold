@@ -2,11 +2,39 @@ from flask import Flask, request, jsonify
 from openai import OpenAI
 from flask_cors import CORS
 import os
+import re
 
 app = Flask(__name__)
 CORS(app)
 
 client = OpenAI(api_key=os.environ.get("OPENAI_API_KEY"))
+
+LABEL_PREFIX_RE = re.compile(
+    r'^(translated text|translation|english|spanish|french|german|italian|portuguese|arabic|hindi|indonesian|tagalog|filipino|swahili|amharic|farsi|persian|turkish|russian|japanese|korean|chinese)[\s:\-–—]+',
+    re.IGNORECASE,
+)
+
+def clean_translation(text: str) -> str:
+    if not text:
+        return ""
+
+    cleaned = text.strip()
+
+    cleaned = LABEL_PREFIX_RE.sub("", cleaned).strip()
+
+    cleaned = re.sub(
+        r'^[A-Za-zÀ-ÿ\s()\-—]+:\s*',
+        "",
+        cleaned
+    ).strip()
+
+    cleaned = re.sub(
+        r'^[\"“”\']+|[\"“”\']+$',
+        "",
+        cleaned
+    ).strip()
+
+    return cleaned
 
 
 @app.route("/", methods=["GET"])
@@ -35,8 +63,8 @@ def translate():
                     "content": (
                         "You are a precise translator. "
                         "Return only the final translated text in the requested target language or dialect. "
-                        "Do not add introductions, labels, quotation marks, explanations, warnings, notes, or context. "
-                        "Do not say things like 'In American English, that would be' or include dialect names before the translation. "
+                        "Do not add introductions, labels, quotation marks, explanations, warnings, usage notes, cultural notes, context, or pronunciation. "
+                        "Do not say things like 'In American English, that would be', 'Translated text:', or include dialect names before the translation. "
                         "Do not wrap the translation in quotation marks. "
                         "Output only the exact translated wording the user should copy and paste."
                     )
@@ -48,7 +76,8 @@ def translate():
             ]
         )
 
-        translated = res.choices[0].message.content.strip()
+        translated = res.choices[0].message.content or ""
+        translated = clean_translation(translated)
 
         return jsonify({"output": translated})
 
