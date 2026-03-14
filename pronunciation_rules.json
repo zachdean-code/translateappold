@@ -1,0 +1,45 @@
+{
+  "readers": {
+    "english_reader": {
+      "syllable_separator": "-",
+      "word_separator": "   ",
+      "style": "readable_non_ipa"
+    },
+    "spanish_reader": {
+      "syllable_separator": "-",
+      "word_separator": "   ",
+      "style": "readable_non_ipa"
+    }
+  },
+  "supported_pairs": [
+    "english_reader->spanish",
+    "spanish_reader->english"
+  ],
+  "coming_soon_pairs": [
+    "english_reader->french",
+    "english_reader->german",
+    "english_reader->italian",
+    "english_reader->portuguese",
+    "english_reader->dutch",
+    "spanish_reader->french",
+    "spanish_reader->german",
+    "spanish_reader->italian",
+    "spanish_reader->portuguese",
+    "spanish_reader->dutch"
+  ],
+  "special_words": {
+    "english_reader->spanish": {
+      "hola": "OH-lah",
+      "gracias": "GRAH-syahs",
+      "como": "KOH-moh",
+      "estas": "ehs-TAHS"
+    },
+    "spanish_reader->english": {
+      "how": "jau",
+      "are": "ar",
+      "you": "yu",
+      "weather": "ueder",
+      "today": "tudei"
+    }
+  }
+}
