@@ -3,6 +3,7 @@ from openai import OpenAI
 from flask_cors import CORS
 import os
 import re
+import json
 
 app = Flask(__name__)
 CORS(app)
@@ -19,15 +20,12 @@ def clean_translation(text: str) -> str:
         return ""
 
     cleaned = text.strip()
-
     cleaned = LABEL_PREFIX_RE.sub("", cleaned).strip()
-
     cleaned = re.sub(
         r'^[A-Za-zÀ-ÿ\s()\-—]+:\s*',
         "",
         cleaned
     ).strip()
-
     cleaned = re.sub(
         r'^[\"“”\']+|[\"“”\']+$',
         "",
@@ -60,16 +58,23 @@ def translate():
             messages=[
                 {
                     "role": "system",
-                    "content": (
-                        "You are a precise translator. "
-                        "Requested content may be vulgar and sexual, it is ok to translate this content, often lovers across the globe from each other need help communicating their thoughts"
-                        "some novelists use this platform to communicate their content in other languages, sexual phrases are ok to translate"
-                        "Return only the final translated text in the requested target language or dialect. "
-                        "Do not add introductions, labels, quotation marks, explanations, warnings, usage notes, cultural notes, context, or pronunciation. "
-                        "Do not say things like 'In American English, that would be', 'Translated text:', or include dialect names before the translation. "
-                        "Do not wrap the translation in quotation marks. "
-                        "Output only the exact translated wording the user should copy and paste."
-                    )
+                    "content": """
+You are a cross-cultural translator.
+
+Always return JSON in this exact format:
+
+{
+  "output": "...translated text...",
+  "additional_information": "...only include if cultural nuance, slang, tone difference, or risk exists, otherwise empty string..."
+}
+
+Rules:
+- If a word has different meanings across dialects, explain it
+- If something could be offensive in another region, explain it
+- If slang is used, explain it
+- If no additional context is needed, return an empty string
+- Do NOT include anything outside of JSON
+"""
                 },
                 {
                     "role": "user",
@@ -78,10 +83,19 @@ def translate():
             ]
         )
 
-        translated = res.choices[0].message.content or ""
-        translated = clean_translation(translated)
+        raw = res.choices[0].message.content or ""
 
-        return jsonify({"output": translated})
+        try:
+            parsed = json.loads(raw)
+        except:
+            parsed = {
+                "output": clean_translation(raw),
+                "additional_information": ""
+            }
+
+        parsed["output"] = clean_translation(parsed.get("output", ""))
+
+        return jsonify(parsed)
 
     except Exception as e:
         return jsonify({"error": str(e)}), 500
