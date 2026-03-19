@@ -51,12 +51,6 @@ def translate():
         if not text:
             return jsonify({"error": "No text provided"}), 400
 
-        # TEMP TEST — force response
-        return jsonify({
-            "output": "Let's go have a smoke.",
-            "additional_information": "TEST BACKEND HIT"
-        })
-
         prompt = f"Translate this into {target}: {text}"
 
         res = client.chat.completions.create(
